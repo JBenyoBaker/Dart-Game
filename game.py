@@ -123,7 +123,20 @@ class Game:
             for pixelCoord in finger_locations:
                 if pixelCoord:
                     #draw the circle around the index finger
-                    cv2.line(image, (pixelCoord[0], pixelCoord[1]), GREEN, 5)
+                    #cv2.circle(image, (pixelCoord[0], pixelCoord[1]), 25, GREEN, 5)
+                    cv2.line(image,(pixelCoord[0],pixelCoord[1]),(pixelCoord[0],pixelCoord[1]),(0,0,0),5)
+                    cv2.line(image,(400, 0),(400, 800),(0,0,0),5)
+                    cv2.line(image,(100, 0),(100, 800),(0,0,0),5)
+                    if pixelCoord[0] > 400:
+                        cv2.fitLine(finger_locations, )
+                        finger_locations.clear()
+                    elif pixelCoord[0] < 100:
+                        finger_locations.clear()
+                    
+
+                    
+                    
+
 
             # Change the color of the frame back
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
