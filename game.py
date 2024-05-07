@@ -14,6 +14,8 @@ from mediapipe.framework.formats import landmark_pb2
 import cv2
 import random
 import time
+import numpy as np
+import matplotlib.pyplot as plt
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -127,11 +129,37 @@ class Game:
                     cv2.line(image,(pixelCoord[0],pixelCoord[1]),(pixelCoord[0],pixelCoord[1]),(0,0,0),5)
                     cv2.line(image,(400, 0),(400, 800),(0,0,0),5)
                     cv2.line(image,(100, 0),(100, 800),(0,0,0),5)
+
                     if pixelCoord[0] > 400:
-                        cv2.fitLine(finger_locations, )
                         finger_locations.clear()
                     elif pixelCoord[0] < 100:
                         finger_locations.clear()
+            
+            # Separate x and y values
+            x = []
+            y = []
+            for location in finger_locations:
+                if location:
+                    x.append(location[0])
+                    y.append(location[1])
+
+            # Fit a parabola
+            coefficients = np.polyfit(x, y, 2)  
+
+            # Plot the results
+            plt.scatter(x, y, label='Data Points')
+            plt.xlabel('X')
+            plt.ylabel('Y')
+
+            # Generate points along the fitted parabola for plotting
+            x_values = np.linspace(min(x), max(x), 100)
+            y_values = np.polyval(coefficients, x_values)
+
+            plt.plot(x_values, y_values, color='red', label='Fitted Parabola')
+            plt.legend()
+            plt.title('Parabola of Best Fit')
+            plt.grid(True)
+            plt.show()
                     
 
                     
