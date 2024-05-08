@@ -103,6 +103,7 @@ class Game:
         Main game loop. Runs until the 
         user presses "q".
         """    
+        coefficients
         finger_locations = []
         # TODO: Modify loop condition  
         while self.video.isOpened():
@@ -121,6 +122,10 @@ class Game:
             # Draw the hand landmarks & add index finger location to list
             finger_locations.append(self.identify_index_finger(image, results))
 
+            # Change the color of the frame back
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            cv2.imshow('Hand Tracking', image)
+
             #Draw line of where the finger has been
             for pixelCoord in finger_locations:
                 if pixelCoord:
@@ -131,44 +136,39 @@ class Game:
                     cv2.line(image,(100, 0),(100, 800),(0,0,0),5)
 
                     if pixelCoord[0] > 400:
+                        # Separate x and y values
+                        x = []
+                        y = []
+                        for location in finger_locations:
+                            if location:
+                                x.append(location[0])
+                                y.append(location[1])
+
+                        # Fit a parabola
+                        coefficients = np.polyfit(x, y, 2) 
+                        if coefficients[0] > 0:
+                            coefficients[0] = coefficients[0]
+
+                        # Plot the results
+                        plt.scatter(x, y, label='Data Points')
+                        plt.xlabel('X')
+                        plt.ylabel('Y')
+
+                        # Generate points along the fitted parabola for plotting
+                        x_values = np.linspace(min(x), max(x), 100)
+                        y_values = np.polyval(coefficients, x_values)
+
+                        plt.plot(x_values, y_values, color='red', label='Fitted Parabola')
+                        plt.legend()
+                        plt.title('Parabola of Best Fit')
+                        plt.grid(True)
+                        plt.show()
+
+                        #clear the points
                         finger_locations.clear()
                     elif pixelCoord[0] < 100:
                         finger_locations.clear()
             
-            # Separate x and y values
-            x = []
-            y = []
-            for location in finger_locations:
-                if location:
-                    x.append(location[0])
-                    y.append(location[1])
-
-            # Fit a parabola
-            coefficients = np.polyfit(x, y, 2)  
-
-            # Plot the results
-            plt.scatter(x, y, label='Data Points')
-            plt.xlabel('X')
-            plt.ylabel('Y')
-
-            # Generate points along the fitted parabola for plotting
-            x_values = np.linspace(min(x), max(x), 100)
-            y_values = np.polyval(coefficients, x_values)
-
-            plt.plot(x_values, y_values, color='red', label='Fitted Parabola')
-            plt.legend()
-            plt.title('Parabola of Best Fit')
-            plt.grid(True)
-            plt.show()
-                    
-
-                    
-                    
-
-
-            # Change the color of the frame back
-            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            cv2.imshow('Hand Tracking', image)
 
             # Break the loop if the user presses 'q'
             if cv2.waitKey(50) & 0xFF == ord('q'):
