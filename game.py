@@ -1,11 +1,9 @@
 """
+Joshua Benyo Baker
 A game that uses hand tracking to 
-hit and destroy green circle enemies.
+throw a ball/dart at a target
 
-@author: Nandhini Namasivayam
-@version: March 2024
-
-edited from: https://i-know-python.com/computer-vision-game-using-mediapipe-and-python/
+edited from: hand-tracking game
 """
 
 import mediapipe as mp
@@ -16,6 +14,7 @@ import random
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 # Importing the dart class from dart.py
 from dart import dart
 
@@ -105,7 +104,7 @@ class Game:
         Main game loop. Runs until the 
         user presses "q".
         """    
-        #coefficients
+        score = 0
         finger_locations = []
         # TODO: Modify loop condition  
         while self.video.isOpened():
@@ -121,22 +120,22 @@ class Game:
             to_detect = mp.Image(image_format=mp.ImageFormat.SRGB, data=image)
             results = self.detector.detect(to_detect)
 
+            #Draw the target
+            cv2.line(image,(1250, 225),(1250, 525),(255,0,0),5)
+
             # Draw the hand landmarks & add index finger location to list
             finger_locations.append(self.identify_index_finger(image, results))
+            #update the score
+            cv2.putText(image, str(score), (50, 50), fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=2, color = GREEN, thickness=2)
 
             # Change the color of the frame back
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            print("first imshow reached")
             cv2.imshow('Hand Tracking', image)
 
             #Draw line of where the finger has been
             for pixelCoord in finger_locations:
                 if pixelCoord:
-                    #draw the circle around the index finger
-                    #cv2.circle(image, (pixelCoord[0], pixelCoord[1]), 25, GREEN, 5)
-                    cv2.line(image,(pixelCoord[0],pixelCoord[1]),(pixelCoord[0],pixelCoord[1]),(0,0,0),5)
-                    cv2.line(image,(400, 0),(400, 800),(0,0,0),5)
-                    cv2.line(image,(100, 0),(100, 800),(0,0,0),5)
-
                     if pixelCoord[0] > 400:
                         # Separate x and y values
                         x = []
@@ -148,12 +147,12 @@ class Game:
 
                         # Fit a parabola
                         coefficients = np.polyfit(x, y, 2) 
-                        if coefficients[0] > 0:
-                            coefficients[0] = coefficients[0]
+                        if coefficients[0] < 0:
+                            coefficients[0] = coefficients[0] * -1
 
                         # Generate points along the fitted parabola for plotting
                         x_values = []
-                        for i in range(1000):
+                        for i in range(1250):
                             x_values.append(i)
                         y_values = np.polyval(coefficients, x_values)
 
@@ -164,8 +163,9 @@ class Game:
                         the_dart = dart(x_values, y_values)
                         the_dart.set_points()
                         print(the_dart.locations)
-
-                        while the_dart.get_x() < 1000:
+                        loopcount = 0
+                        while the_dart.get_x() < 1250:
+                            loopcount=loopcount + 5
 
                             # Get the current frame
                             frame = self.video.read()[1]
@@ -173,24 +173,37 @@ class Game:
                             # Convert it to an RGB image
                             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-                            locs = dart.get_locations(dart)
-
-                            #display the points
-                            for i in range(len(locs)):
-                                cv2.line(image,(locs[i][0],locs[i][1]),(locs[i][0],locs[i][1]),(0,255,0),5)
-                                print(locs)
+                            #flip the image back to normal
+                            frame = cv2.flip(frame, 1)
+        
+                            #cv2.circle(frame, (int(x_values[loopcount + 400]), height - (int(y_values[loopcount + 400]) + pixelCoord[1])), 25, RED, 5)
+                            cv2.circle(frame, (int(x_values[loopcount + 400]), (int(y_values[loopcount + 400]))), 25, RED, 5)
+                            cv2.putText(frame, str(score), (50, 50), fontFace=cv2.FONT_HERSHEY_COMPLEX, fontScale=2, color = GREEN, thickness=2)
+                            
+                            if int(x_values[loopcount + 400]) == 1240 and int(y_values[loopcount + 400]) > 225 and int(y_values[loopcount + 400]) < 525:
+                                cv2.line(frame,(1250, 225),(1250, 525),(0,255,0),5)
+                                score = score + 1
+                                cv2.imshow('Hand Tracking', frame)
+                                break
+                            else:
+                                cv2.line(frame,(1250, 225),(1250, 525),(0,0,255),5)
                             
                             #display the frame
-                            cv2.imshow('Hand Tracking', image)
+                            print("second imshow reached")
+                            print(loopcount)
+                            cv2.imshow('Hand Tracking', frame)                          
 
                             if len(the_dart.x_values) > 0:
                                 #move the points
                                 the_dart.move_points()
+
+                            #close the window if user presses q
+                            if cv2.waitKey(50) & 0xFF == ord('q'):
+                                self.video.release()
+                                cv2.destroyAllWindows()
                         
                         #clear the points
                         finger_locations.clear()
-                            
-
 
                     elif pixelCoord[0] < 100:
                         finger_locations.clear()
@@ -198,7 +211,6 @@ class Game:
 
             # Break the loop if the user presses 'q'
             if cv2.waitKey(50) & 0xFF == ord('q'):
-                print(self.score)
                 
         
                 self.video.release()
