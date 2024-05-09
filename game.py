@@ -16,6 +16,8 @@ import random
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+# Importing the dart class from dart.py
+from dart import dart
 
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
@@ -103,7 +105,7 @@ class Game:
         Main game loop. Runs until the 
         user presses "q".
         """    
-        coefficients
+        #coefficients
         finger_locations = []
         # TODO: Modify loop condition  
         while self.video.isOpened():
@@ -149,23 +151,47 @@ class Game:
                         if coefficients[0] > 0:
                             coefficients[0] = coefficients[0]
 
-                        # Plot the results
-                        plt.scatter(x, y, label='Data Points')
-                        plt.xlabel('X')
-                        plt.ylabel('Y')
-
                         # Generate points along the fitted parabola for plotting
-                        x_values = np.linspace(min(x), max(x), 100)
+                        x_values = []
+                        for i in range(1000):
+                            x_values.append(i)
                         y_values = np.polyval(coefficients, x_values)
 
-                        plt.plot(x_values, y_values, color='red', label='Fitted Parabola')
-                        plt.legend()
-                        plt.title('Parabola of Best Fit')
-                        plt.grid(True)
-                        plt.show()
+                        print(x_values)
+                        print(y_values)
+                        
+                        #create the dart
+                        the_dart = dart(x_values, y_values)
+                        the_dart.set_points()
+                        print(the_dart.locations)
 
+                        while the_dart.get_x() < 1000:
+
+                            # Get the current frame
+                            frame = self.video.read()[1]
+
+                            # Convert it to an RGB image
+                            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+                            locs = dart.get_locations(dart)
+
+                            #display the points
+                            for i in range(len(locs)):
+                                cv2.line(image,(locs[i][0],locs[i][1]),(locs[i][0],locs[i][1]),(0,255,0),5)
+                                print(locs)
+                            
+                            #display the frame
+                            cv2.imshow('Hand Tracking', image)
+
+                            if len(the_dart.x_values) > 0:
+                                #move the points
+                                the_dart.move_points()
+                        
                         #clear the points
                         finger_locations.clear()
+                            
+
+
                     elif pixelCoord[0] < 100:
                         finger_locations.clear()
             
